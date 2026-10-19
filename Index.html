@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Инклюзивті сынып: Мұғалім миссиясы</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-dark: #3730a3;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 50%, #ecfdf5 100%);
+    min-height: 100vh;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+  header {
+    text-align: center;
+    padding: 28px 16px 20px;
+  }
+  header h1 {
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+  /* Progress */
+  .progress-wrap {
+    background: white;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.08);
+    display: none;
+  }
+  .progress-bar-bg {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #818cf8);
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+  .score-display {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  /* Screens */
+  .screen {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.07);
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1.35rem;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+  }
+  .card p { color: var(--muted); margin-bottom: 16px; }
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), #6366f1);
+    color: white;
+    box-shadow: 0 6px 20px rgba(79,70,229,0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(79,70,229,0.4);
+  }
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #34d399);
+    color: white;
+  }
+  .btn-outline {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-block { width: 100%; }
+  /* Quiz options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .option {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-size: 1rem;
+  }
+  .option:hover { border-color: #a5b4fc; background: #eef2ff; }
+  .option.selected { border-color: var(--primary); background: #e0e7ff; }
+  .option.correct {
+    border-color: var(--success);
+    background: #d1fae5;
+  }
+  .option.wrong {
+    border-color: var(--danger);
+    background: #fee2e2;
+  }
+  .option:disabled { cursor: default; }
+  /* Feedback */
+  .feedback {
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin: 16px 0;
+    font-weight: 500;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: #d1fae5; color: #065f46; }
+  .feedback.bad { background: #fee2e2; color: #991b1b; }
+  /* Scenario cards */
+  .scenario-box {
+    background: linear-gradient(135deg, #eef2ff, #f0fdf4);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+    border-left: 5px solid var(--primary);
+  }
+  .scenario-box h3 { color: var(--primary-dark); margin-bottom: 8px; }
+  /* Matching */
+  .match-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  @media (max-width: 600px) {
+    .match-grid { grid-template-columns: 1fr; }
+  }
+  .match-item {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+  .match-item.selected { border-color: var(--primary); background: #e0e7ff; }
+  .match-item.matched {
+    border-color: var(--success);
+    background: #d1fae5;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  /* Cognitive cards */
+  .cog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .cog-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .cog-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(79,70,229,0.15);
+  }
+  .cog-card .icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .cog-card h4 { font-size: 1rem; margin-bottom: 4px; }
+  .cog-card p { font-size: 0.85rem; color: var(--muted); }
+  .cog-detail {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: #f0f9ff;
+    border-radius: 12px;
+    border-left: 4px solid #0ea5e9;
+  }
+  .cog-detail.show { display: block; }
+  /* Final */
+  .final-score {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-align: center;
+    margin: 12px 0;
+  }
+  .stars {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 16px;
+  }
+  .tips-list {
+    list-style: none;
+    margin: 16px 0;
+  }
+  .tips-list li {
+    padding: 10px 0 10px 32px;
+    position: relative;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .tips-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--success);
+    font-weight: bold;
+  }
+  .center { text-align: center; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Инклюзивті білім беру</div>
+    <h1>Инклюзивті сынып: Мұғалім миссиясы</h1>
+    <p>Психикалық дамуы тежелген білім алушыларды оқыту ерекшеліктері</p>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="score-display">
+      <span>Деңгей: <span id="levelName">Кіріспе</span></span>
+      <span>Ұпай: <span id="scoreVal">0</span></span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 0: Intro -->
+  <div class="screen active" id="screen0">
+    <div class="card">
+      <h2>Сәлем, мұғалім!</h2>
+      <p>Сен инклюзивті сыныпта жұмыс істейсің. Сыныбыңда психикалық дамуы тежелген (ПДТ) білім алушылар бар. Олардың танымдық процестері баяу дамиды, зейіні тұрақсыз, тез шаршайды.</p>
+      <p>Сенің миссияң — дұрыс әдістерді таңдап, әр балаға сәттілік жағдайын жасау.</p>
+      <ul class="tips-list" style="margin:18px 0;">
+        <li>Оқыту ерекшеліктерін білу</li>
+        <li>Сараланған тапсырмалар қолдану</li>
+        <li>Танымдық процестерді дамыту тәсілдерін меңгеру</li>
+      </ul>
+      <button class="btn btn-primary btn-block mt-16" onclick="startGame()">Миссияны бастау 🚀</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: Quiz - Features -->
+  <div class="screen" id="screen1">
+    <div class="card">
+      <h2>1-деңгей: Білім тексеру</h2>
+      <p id="qText">Сұрақ жүктелуде...</p>
+      <div class="options" id="qOptions"></div>
+      <div class="feedback" id="qFeedback"></div>
+      <button class="btn btn-primary btn-block hidden" id="nextQBtn" onclick="nextQuestion()">Келесі сұрақ →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Scenario choices -->
+  <div class="screen" id="screen2">
+    <div class="card">
+      <h2>2-деңгей: Сараланған оқыту</h2>
+      <p>Сыныптағы жағдайды оқып, ең тиімді әрекетті таңда.</p>
+      <div id="scenarioArea"></div>
+      <div class="feedback" id="scFeedback"></div>
+      <button class="btn btn-primary btn-block hidden" id="nextScBtn" onclick="nextScenario()">Келесі жағдай →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Cognitive processes -->
+  <div class="screen" id="screen3">
+    <div class="card">
+      <h2>3-деңгей: Танымдық процестерді дамыту</h2>
+      <p>Әр процесті басып, оны дамыту тәсілдерін біл. Барлығын ашқаннан кейін жалғастыр.</p>
+      <div class="cog-grid" id="cogGrid"></div>
+      <div class="cog-detail" id="cogDetail"></div>
+      <button class="btn btn-primary btn-block mt-24 hidden" id="finishCogBtn" onclick="goToFinal()">Қорытындыға өту →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Final -->
+  <div class="screen" id="screen4">
+    <div class="card center">
+      <h2>Миссия аяқталды!</h2>
+      <div class="stars" id="stars"></div>
+      <div class="final-score" id="finalScore">0</div>
+      <p id="finalMsg"></p>
+      <div style="text-align:left; margin-top:24px;">
+        <h3 style="color:var(--primary-dark); margin-bottom:12px;">Есте сақта:</h3>
+        <ul class="tips-list">
+          <li>ПДТ оқушылар тез шаршайды — 15-20 минут сайын қозғалыс үзілісін жаса</li>
+          <li>Нұсқауларды қысқа, анық және көрнекі бер</li>
+          <li>Тапсырма көлемін азайт, деңгейлерге бөл</li>
+          <li>Сәттілік жағдайын жиі жаса — мотивация өседі</li>
+          <li>Зейін, ес, ойлауды дидактикалық ойындар арқылы дамыт</li>
+          <li>Дефектолог, психолог, логопедпен бірлесе жұмыс істе</li>
+        </ul>
+      </div>
+      <button class="btn btn-success btn-block mt-24" onclick="restart()">Қайта ойнау 🔄</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== DATA ==========
+const questions = [
+  {
+    q: "ПДТ білім алушылардың негізгі ерекшелігі қайсы?",
+    options: [
+      "Зейіннің тұрақсыздығы және тез шаршау",
+      "Өте жоғары ақыл-ой қабілеті",
+      "Ешқандай ерекшелік жоқ",
+      "Тек физикалық дамудың тежелуі"
+    ],
+    correct: 0,
+    explain: "ПДТ балаларда зейін тұрақсыз, қабылдау фрагментті, танымдық процестер баяу жүреді және тез шаршайды."
+  },
+  {
+    q: "Сабақта ПДТ оқушымен жұмыс істегенде ең маңыздысы не?",
+    options: [
+      "Тек ауызша түсіндіру",
+      "Көрнекілік, қысқа нұсқау және ойын элементтері",
+      "Көп үй тапсырмасы беру",
+      "Басқа оқушылармен салыстыру"
+    ],
+    correct: 1,
+    explain: "Көрнекілік, қысқа және анық нұсқаулар, ойын сәттері ПДТ оқушылардың оқуын жеңілдетеді."
+  },
+  {
+    q: "Сараланған оқыту дегеніміз не?",
+    options: [
+      "Барлық оқушыға бірдей тапсырма беру",
+      "Әр оқушының мүмкіндігіне қарай тапсырма деңгейін өзгерту",
+      "Тек сыныптан тыс жұмыс",
+      "Тек бағаны төмендету"
+    ],
+    correct: 1,
+    explain: "Сараланған оқыту — тапсырмаларды оқушының дайындық деңгейіне, қарқынына және қажеттілігіне сай бейімдеу."
+  },
+  {
+    q: "ПДТ оқушының зейінін ұстау үшін не істеу керек?",
+    options: [
+      "Ұзақ дәріс оқу",
+      "Қысқа жұмыс блок + қозғалыс үзілісі + көрнекі тірек",
+      "Тек жаттығу дәптерін толтыру",
+      "Сыныпты толық тыныш ұстау"
+    ],
+    correct: 1,
+    explain: "Зейін 10-15 минутқа ғана тұрақты болады. Қысқа блоктар, физминутка және визуалды тіректер тиімді."
+  },
+  {
+    q: "Танымдық процестерді дамытуда ең тиімді тәсіл?",
+    options: [
+      "Тек жаттанды жаттау",
+      "Дидактикалық ойындар, нақты заттар, қадамдық нұсқау",
+      "Тек тест тапсыру",
+      "Үйде өз бетімен оқу"
+    ],
+    correct: 1,
+    explain: "Ойын, нақты заттармен жұмыс және тапсырманы кішкене қадамдарға бөлу танымдық процестерді дамытады."
+  }
+];
+
+const scenarios = [
+  {
+    title: "Жағдай 1: Жаңа тақырып",
+    text: "Сыныпта жаңа тақырып түсіндірілуде. ПДТ оқушы Айдар 5 минуттан кейін-ақ басқа жаққа қарап, тапсырманы түсінбей отыр.",
+    options: [
+      { text: "Оны сынып алдында ұялту", correct: false },
+      { text: "Қысқа, анық нұсқау беріп, көрнекі схема көрсету және көмекші карточка беру", correct: true },
+      { text: "Оны мүлде елемеу", correct: false },
+      { text: "Барлық сыныпқа тапсырманы қайталау", correct: false }
+    ],
+    explain: "Қысқа нұсқау + көрнекілік + жеке тірек — ПДТ оқушыға ең тиімді қолдау."
+  },
+  {
+    title: "Жағдай 2: Шаршау",
+    text: "Сабақтың 25-минутында Айша шаршап, жұмыс істеуден бас тартты. Қолдары дірілдеп, көңіл-күйі төмендеді.",
+    options: [
+      { text: "«Жұмыс істемесең, бағаң төмен болады» деп қорқыту", correct: false },
+      { text: "Қысқа физминутка / қозғалыс үзілісі жасап, кейін жеңілдетілген тапсырма беру", correct: true },
+      { text: "Оны сыныптан шығарып жіберу", correct: false },
+      { text: "Басқалармен бірдей тапсырманы жалғастыруға мәжбүрлеу", correct: false }
+    ],
+    explain: "ПДТ балалар тез шаршайды. 15-20 минут сайын қозғалыс үзілісі мен тапсырманы жеңілдету қажет."
+  },
+  {
+    title: "Жағдай 3: Тапсырма көлемі",
+    text: "Математика сабағында 12 есеп берілді. ПДТ оқушы Ерлан тек 3-ін ғана шеше алды, қалғанын бастаған жоқ.",
+    options: [
+      { text: "Барлық 12 есепті үйге беру", correct: false },
+      { text: "Тапсырманы 4-5 есепке қысқартып, деңгейлі нұсқа ұсыну", correct: true },
+      { text: "Оны «жалқау» деп атау", correct: false },
+      { text: "Басқа оқушылардың жұмысын көшіруге рұқсат ету", correct: false }
+    ],
+    explain: "Көлемді азайту және сараланған (деңгейлі) тапсырмалар — сараланған оқытудың негізгі принципі."
+  }
+];
+
+const cognitive = [
+  {
+    id: "attention",
+    icon: "👀",
+    title: "Зейін",
+    short: "Тұрақсыз, тез алаңдайды",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Қысқа жұмыс блоктары (8-12 мин)<br>• Физминутка және қозғалыс үзілістері<br>• Көрнекі таймер / визуалды кесте<br>• Алаңдататын заттарды азайту<br>• «Тап және көрсет» сияқты дидактикалық ойындар"
+  },
+  {
+    id: "memory",
+    icon: "🧠",
+    title: "Ес",
+    short: "Еріксіз ес басым, сөздік ес әлсіз",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Көпсенсорлы есте сақтау (көру + есту + қозғалыс)<br>• Қайталау және ассоциациялар<br>• Суреттер, схемалар, мнемотехника<br>• Ойын түріндегі жаттығулар («Не өзгерді?», «Есте сақта және қайтала»)"
+  },
+  {
+    id: "thinking",
+    icon: "💡",
+    title: "Ойлау",
+    short: "Нақты-әрекеттік ойлау басым",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Нақты заттардан абстрактіге өту<br>• Тапсырманы кішкене қадамдарға бөлу<br>• Салыстыру, топтау, жіктеу ойындар<br>• «Неге?» сұрақтарын қою<br>• Логикалық тізбектер мен жұмбақтар"
+  },
+  {
+    id: "perception",
+    icon: "✋",
+    title: "Қабылдау",
+    short: "Фрагментті, тұтастығы бұзылған",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Сенсорлық жаттығулар (түс, пішін, өлшем)<br>• «Бүтінді бөлшектерден құра» ойындар<br>• Көрнекі және тактильді материалдар<br>• Баяу, анық көрсету және сипаттау"
+  },
+  {
+    id: "speech",
+    icon: "🗣️",
+    title: "Сөйлеу",
+    short: "Сөздік қор аз, байланыстырып сөйлеу қиын",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Рөлдік және сюжетті ойындар<br>• Сурет бойынша әңгіме құрау<br>• Қысқа сөйлемдерден бастау<br>• Логопедпен бірлескен жұмыс<br>• Модельдеу және қайталау"
+  },
+  {
+    id: "motivation",
+    icon: "⭐",
+    title: "Мотивация",
+    short: "Сәтсіздіктен қорқу, төмен қызығушылық",
+    detail: "<strong>Дамыту тәсілдері:</strong><br>• Сәттілік жағдайын жиі жасау<br>• Кішкене жетістіктерді мадақтау<br>• Ойын және қызықты тапсырмалар<br>• Жеке прогресс картасы<br>• Сыныпта қолдау атмосферасын құру"
+  }
+];
+
+// ========== STATE ==========
+let score = 0;
+let currentQ = 0;
+let currentSc = 0;
+let openedCog = new Set();
+let answered = false;
+
+// ========== FUNCTIONS ==========
+function startGame() {
+  document.getElementById('progressWrap').style.display = 'block';
+  showScreen(1);
+  updateProgress(1, 'Білім тексеру');
+  loadQuestion();
+}
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + n).classList.add('active');
+}
+
+function updateProgress(level, name) {
+  document.getElementById('levelName').textContent = name;
+  document.getElementById('scoreVal').textContent = score;
+  const percent = level === 1 ? 20 : level === 2 ? 50 : level === 3 ? 80 : 100;
+  document.getElementById('progressBar').style.width = percent + '%';
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = questions[currentQ];
+  document.getElementById('qText').textContent = `Сұрақ ${currentQ + 1}/${questions.length}: ${q.q}`;
+  const opts = document.getElementById('qOptions');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.textContent = opt;
+    div.onclick = () => selectAnswer(i);
+    opts.appendChild(div);
+  });
+  document.getElementById('qFeedback').className = 'feedback';
+  document.getElementById('nextQBtn').classList.add('hidden');
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = questions[currentQ];
+  const opts = document.querySelectorAll('#qOptions .option');
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (i === q.correct) o.classList.add('correct');
+    else if (i === idx) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('qFeedback');
+  if (idx === q.correct) {
+    score += 20;
+    fb.className = 'feedback show ok';
+    fb.textContent = '✅ Дұрыс! ' + q.explain;
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Қате. ' + q.explain;
+  }
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('nextQBtn').classList.remove('hidden');
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ < questions.length) {
+    loadQuestion();
+  } else {
+    // go to scenarios
+    showScreen(2);
+    updateProgress(2, 'Сараланған оқыту');
+    loadScenario();
+  }
+}
+
+function loadScenario() {
+  answered = false;
+  const sc = scenarios[currentSc];
+  const area = document.getElementById('scenarioArea');
+  area.innerHTML = `
+    <div class="scenario-box">
+      <h3>${sc.title}</h3>
+      <p>${sc.text}</p>
+    </div>
+    <div class="options" id="scOptions"></div>
+  `;
+  const opts = document.getElementById('scOptions');
+  sc.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.textContent = opt.text;
+    div.onclick = () => selectScenario(i);
+    opts.appendChild(div);
+  });
+  document.getElementById('scFeedback').className = 'feedback';
+  document.getElementById('nextScBtn').classList.add('hidden');
+}
+
+function selectScenario(idx) {
+  if (answered) return;
+  answered = true;
+  const sc = scenarios[currentSc];
+  const opts = document.querySelectorAll('#scOptions .option');
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (sc.options[i].correct) o.classList.add('correct');
+    else if (i === idx) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('scFeedback');
+  if (sc.options[idx].correct) {
+    score += 25;
+    fb.className = 'feedback show ok';
+    fb.textContent = '✅ Керемет таңдау! ' + sc.explain;
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Бұл тиімді емес. ' + sc.explain;
+  }
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('nextScBtn').classList.remove('hidden');
+}
+
+function nextScenario() {
+  currentSc++;
+  if (currentSc < scenarios.length) {
+    loadScenario();
+  } else {
+    showScreen(3);
+    updateProgress(3, 'Танымдық процестер');
+    loadCognitive();
+  }
+}
+
+function loadCognitive() {
+  const grid = document.getElementById('cogGrid');
+  grid.innerHTML = '';
+  cognitive.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'cog-card';
+    div.innerHTML = `<div class="icon">${c.icon}</div><h4>${c.title}</h4><p>${c.short}</p>`;
+    div.onclick = () => openCog(c);
+    grid.appendChild(div);
+  });
+}
+
+function openCog(c) {
+  openedCog.add(c.id);
+  const detail = document.getElementById('cogDetail');
+  detail.innerHTML = `<h3>${c.icon} ${c.title}</h3><p>${c.detail}</p>`;
+  detail.classList.add('show');
+  // mark card
+  document.querySelectorAll('.cog-card').forEach(card => {
+    if (card.querySelector('h4').textContent === c.title) {
+      card.style.borderColor = 'var(--success)';
+      card.style.background = '#d1fae5';
+    }
+  });
+  if (openedCog.size === cognitive.length) {
+    score += 30;
+    document.getElementById('scoreVal').textContent = score;
+    document.getElementById('finishCogBtn').classList.remove('hidden');
+  }
+}
+
+function goToFinal() {
+  showScreen(4);
+  updateProgress(4, 'Аяқталды');
+  document.getElementById('finalScore').textContent = score;
+  let stars = '';
+  let msg = '';
+  if (score >= 180) {
+    stars = '⭐⭐⭐';
+    msg = 'Тамаша! Сен инклюзивті білім берудің нағыз маманысың!';
+  } else if (score >= 120) {
+    stars = '⭐⭐';
+    msg = 'Жақсы нәтиже! Тағы біраз практикамен керемет мұғалім боласың.';
+  } else {
+    stars = '⭐';
+    msg = 'Бастама жақсы! Материалды қайталап, қайта ойнауға болады.';
+  }
+  document.getElementById('stars').textContent = stars;
+  document.getElementById('finalMsg').textContent = msg;
+}
+
+function restart() {
+  score = 0;
+  currentQ = 0;
+  currentSc = 0;
+  openedCog = new Set();
+  document.getElementById('progressWrap').style.display = 'none';
+  showScreen(0);
+}
+</script>
+</body>
+</html>
